@@ -23,12 +23,20 @@ import {
   Check
 } from 'lucide-react';
 
-// --- Firebase 配置 ---
-const firebaseConfig = JSON.parse(__firebase_config);
+// --- Firebase 配置 (直接寫入版) ---
+// 請將下方的 {} 替換成你的 Firebase 配置內容
+const firebaseConfig = {
+  /* 這裡貼上你的 Firebase 配置，例如：
+     apiKey: "...",
+     authDomain: "...",
+     ... 
+  */
+};
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'attendance-system-001';
+const appId = 'attendance-system-001';
 
 const STAFF_OPTIONS = [
   { name: '查', color: 'bg-blue-100 text-blue-700 border-blue-200', text: 'text-blue-400' },
@@ -36,7 +44,7 @@ const STAFF_OPTIONS = [
   { name: '安', color: 'bg-purple-100 text-purple-700 border-purple-200', text: 'text-purple-400' },
 ];
 
-const App = () => {
+const CalendarApp = () => {
   const [user, setUser] = useState(null);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,11 +64,7 @@ const App = () => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
+        await signInAnonymously(auth);
       } catch (err) {
         console.error("驗證錯誤:", err);
       }
@@ -123,17 +127,14 @@ const App = () => {
     if (!user) return;
     const currentTime = getCurrentTime();
     
-    // 尋找是否已有該人該天的紀錄
     const existingRecord = records.find(r => r.name === quickSelect.name && r.date === quickSelect.date);
     const recordsCol = collection(db, 'artifacts', appId, 'public', 'data', 'attendance');
 
     try {
       if (existingRecord) {
-        // 更新現有紀錄
         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'attendance', existingRecord.id);
         await updateDoc(docRef, { [field]: currentTime });
       } else {
-        // 建立新紀錄，其他欄位預設 00:00:00
         await addDoc(recordsCol, {
           name: quickSelect.name,
           date: quickSelect.date,
@@ -181,7 +182,6 @@ const App = () => {
     }
   };
 
-  // --- CSV 功能 ---
   const exportCSV = () => {
     const headers = ["姓名", "日期", "上班時間", "下班時間", "休息開始", "休息結束", "工作時數", "休息時數"];
     const rows = records.map(r => {
@@ -196,7 +196,6 @@ const App = () => {
     link.click();
   };
 
-  // --- 統計數據 ---
   const personMonthlyStats = useMemo(() => {
     const filtered = records.filter(r => r.date.startsWith(selectedMonth));
     return STAFF_OPTIONS.map(staff => {
@@ -211,7 +210,7 @@ const App = () => {
     });
   }, [records, selectedMonth]);
 
-  if (!user) return <div className="min-h-screen bg-slate-50 flex items-center justify-center animate-pulse">載入中...</div>;
+  if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center animate-pulse font-bold">雲端同步中...</div>;
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans overflow-x-auto">
@@ -223,7 +222,7 @@ const App = () => {
             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
               <Clock className="text-blue-600" /> 工時管理系統 v2.0
             </h1>
-            <p className="text-slate-500 text-sm mt-1">智慧同步模式：按下打卡後清單資料將自動更新</p>
+            <p className="text-slate-500 text-sm mt-1">雲端即時模式：查、歐、安 三人同步排班中</p>
           </div>
           <button onClick={exportCSV} className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-bold shadow-lg shadow-blue-100">
             <Download size={18} /> 匯出 CSV 報表
@@ -231,7 +230,6 @@ const App = () => {
         </div>
 
         <div className="grid grid-cols-12 gap-6">
-          
           {/* 左側：控制面板 */}
           <div className="col-span-3 space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -279,7 +277,7 @@ const App = () => {
                     <span className="text-sm font-bold">休息終</span>
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-400 text-center italic mt-2 italic">※ 點擊後，清單內對應日期的時間會立即跳動更新</p>
+                <p className="text-[10px] text-slate-400 text-center italic mt-2">※ 點擊後，雲端資料庫將自動同步更新</p>
               </div>
             </div>
 
@@ -301,7 +299,7 @@ const App = () => {
                   <div key={stat.name} className="p-3 bg-white/5 rounded-xl border border-white/10">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-black text-lg">{stat.name}</span>
-                      <span className="text-[10px] opacity-50 uppercase tracking-widest">{stat.count} 筆紀錄</span>
+                      <span className="text-[10px] opacity-50 uppercase tracking-widest">{stat.count} 筆</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-center">
                       <div className="p-2 bg-blue-500/10 rounded-lg">
@@ -324,7 +322,7 @@ const App = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
               <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                 <h2 className="text-xl font-black text-slate-800">打卡紀錄與工時清單</h2>
-                <span className="text-xs text-slate-400">所有時間點皆可點擊右側鉛筆進行手動微調</span>
+                <span className="text-xs text-slate-400">點擊右側鉛筆圖示可手動微調時間點</span>
               </div>
               
               <table className="w-full text-left">
@@ -332,11 +330,11 @@ const App = () => {
                   <tr className="bg-slate-50 text-slate-400 text-[11px] font-black uppercase tracking-widest">
                     <th className="px-6 py-4">日期</th>
                     <th className="px-6 py-4">人員</th>
-                    <th className="px-6 py-4">上班時間</th>
-                    <th className="px-6 py-4">下班時間</th>
-                    <th className="px-6 py-4">休息開始</th>
-                    <th className="px-6 py-4">休息結束</th>
-                    <th className="px-6 py-4">總工時</th>
+                    <th className="px-6 py-4">上班</th>
+                    <th className="px-6 py-4">下班</th>
+                    <th className="px-6 py-4">休息始</th>
+                    <th className="px-6 py-4">休息終</th>
+                    <th className="px-6 py-4">工時</th>
                     <th className="px-6 py-4 text-center">操作</th>
                   </tr>
                 </thead>
@@ -355,12 +353,11 @@ const App = () => {
                           </span>
                         </td>
                         
-                        {/* 時間欄位：正常 vs 編輯模式 */}
                         {['startTime', 'endTime', 'breakStart', 'breakEnd'].map(field => (
                           <td key={field} className="px-6 py-4 font-mono text-sm">
                             {isEditing ? (
                               <input 
-                                className="w-24 p-1 border rounded text-center bg-blue-50 focus:ring-2 focus:ring-blue-400 outline-none"
+                                className="w-24 p-1 border rounded text-center bg-blue-50"
                                 value={editBuffer[field]}
                                 onChange={(e) => setEditBuffer({...editBuffer, [field]: e.target.value})}
                               />
@@ -382,21 +379,13 @@ const App = () => {
                           <div className="flex items-center justify-center gap-2">
                             {isEditing ? (
                               <>
-                                <button onClick={saveEdit} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-full" title="儲存">
-                                  <Check size={18} />
-                                </button>
-                                <button onClick={cancelEdit} className="p-2 text-slate-400 hover:bg-slate-50 rounded-full" title="取消">
-                                  <X size={18} />
-                                </button>
+                                <button onClick={saveEdit} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-full"><Check size={18} /></button>
+                                <button onClick={cancelEdit} className="p-2 text-slate-400 hover:bg-slate-50 rounded-full"><X size={18} /></button>
                               </>
                             ) : (
                               <>
-                                <button onClick={() => startEditing(r)} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all">
-                                  <Edit2 size={16} />
-                                </button>
-                                <button onClick={() => handleDelete(r.id)} className="p-2 text-slate-200 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-all">
-                                  <Trash2 size={16} />
-                                </button>
+                                <button onClick={() => startEditing(r)} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full"><Edit2 size={16} /></button>
+                                <button onClick={() => handleDelete(r.id)} className="p-2 text-slate-200 hover:text-rose-600 hover:bg-rose-50 rounded-full"><Trash2 size={16} /></button>
                               </>
                             )}
                           </div>
@@ -406,7 +395,7 @@ const App = () => {
                   })}
                 </tbody>
               </table>
-              {records.length === 0 && <div className="p-20 text-center text-slate-400 italic">目前尚無資料，請從左側開始打卡</div>}
+              {records.length === 0 && <div className="p-20 text-center text-slate-400 italic">目前雲端尚無資料</div>}
             </div>
           </div>
         </div>
@@ -415,4 +404,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default CalendarApp;
