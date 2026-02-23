@@ -1,18 +1,13 @@
 {
-  "name": "sd-attendance-system",
+  "name": "sd-attendance-offline",
   "private": true,
-  "version": "2.0.0",
+  "version": "1.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
+  "scripts": { "dev": "vite", "build": "vite build", "preview": "vite preview" },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "lucide-react": "latest",
-    "firebase": "^10.0.0"
+    "lucide-react": "latest"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
