@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Clock, Download, LogIn, LogOut, Coffee, Play, Edit2, X, Check, Trash2, Users } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { 
+  Clock, Download, Upload, LogIn, LogOut, Coffee, Play, Edit2, X, Check, Trash2, Users 
+} from 'lucide-react';
 
 const STAFF_OPTIONS = [
   { name: '查', color: 'bg-blue-100 text-blue-700 border-blue-200' },
@@ -16,6 +18,7 @@ const App = () => {
   const [quickSelect, setQuickSelect] = useState({ name: '查', date: new Date().toISOString().substring(0, 10) });
   const [editingId, setEditingId] = useState(null);
   const [editBuffer, setEditBuffer] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem('sd_attendance_v1', JSON.stringify(records));
@@ -62,6 +65,7 @@ const App = () => {
     }
   };
 
+  // 匯出功能
   const exportCSV = () => {
     const headers = ["姓名", "日期", "上班", "下班", "休息始", "休息終", "工時"];
     const rows = records.map(r => [r.name, r.date, r.startTime, r.endTime, r.breakStart, r.breakEnd, secondsToTime(calculateDailyStats(r).workSec)]);
@@ -70,6 +74,32 @@ const App = () => {
     link.href = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8;' }));
     link.download = `伸動打卡紀錄_${new Date().toLocaleDateString()}.csv`;
     link.click();
+  };
+
+  // 匯入功能
+  const importCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const rows = text.split('\n').slice(1); // 跳過標題列
+      const newRecords = [...records];
+      
+      rows.forEach(row => {
+        const cols = row.split(',');
+        if (cols.length >= 6) {
+          const [name, date, startTime, endTime, breakStart, breakEnd] = cols.map(c => c.trim());
+          // 檢查重複
+          if (!newRecords.some(r => r.name === name && r.date === date)) {
+            newRecords.push({ id: Date.now() + Math.random(), name, date, startTime, endTime, breakStart, breakEnd });
+          }
+        }
+      });
+      setRecords([...newRecords].sort((a, b) => new Date(b.date) - new Date(a.date)));
+      alert('匯入成功！');
+    };
+    reader.readAsText(file);
   };
 
   const personMonthlyStats = useMemo(() => {
@@ -88,7 +118,15 @@ const App = () => {
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Clock className="text-blue-600" /> 伸動保健室｜打卡系統
           </h1>
-          <button onClick={exportCSV} className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-colors">匯出 CSV</button>
+          <div className="flex gap-2">
+            <input type="file" accept=".csv" ref={fileInputRef} onChange={importCSV} className="hidden" />
+            <button onClick={() => fileInputRef.current.click()} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all shadow-sm border border-slate-200" title="匯入資料">
+              <Upload size={20} />
+            </button>
+            <button onClick={exportCSV} className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100" title="匯出報表">
+              <Download size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-12 gap-6">
@@ -133,7 +171,7 @@ const App = () => {
                   const target = isEditing ? editBuffer : r;
                   const stats = calculateDailyStats(target);
                   return (
-                    <tr key={r.id} className="hover:bg-slate-50">
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
                       <td className="p-6 font-bold text-slate-600">{r.date}</td>
                       <td className="p-6"><span className={`px-4 py-1.5 rounded-full font-black border ${STAFF_OPTIONS.find(s=>s.name===r.name)?.color}`}>{r.name}</span></td>
                       <td className="p-6 font-mono">{isEditing ? <input className="w-24 border p-1 rounded bg-blue-50" value={editBuffer.startTime} onChange={e=>setEditBuffer({...editBuffer, startTime:e.target.value})}/> : r.startTime}</td>
