@@ -86,7 +86,7 @@ const App = () => {
       rows.forEach(row => {
         const cols = row.split(',');
         if (cols.length >= 6) {
-          const [name, date, startTime, endTime, breakStart, breakEnd] = cols.map(c => c.trim());
+          const [name, date, startTime, endTime, breakStart, breakEnd] = cols.map(c => c.trim().replace(/^"|"$/g, ''));
           if (!newRecords.some(r => r.name === name && r.date === date)) {
             newRecords.push({ id: Date.now() + Math.random(), name, date, startTime, endTime, breakStart, breakEnd });
           }
@@ -127,19 +127,28 @@ const App = () => {
               <h2 className="font-bold mb-4 border-b pb-2 flex items-center gap-2 text-lg text-slate-700"><LogIn size={18}/> 快速打卡</h2>
               <div className="space-y-3">
                 <select className="w-full p-2 bg-slate-100 rounded-lg font-bold" value={quickSelect.name} onChange={e => setQuickSelect({...quickSelect, name: e.target.value})}>
-                  {STAFF_OPTIONS.map(o => <option key={o.name}>{o.name}</option>)}
+                  {STAFF_OPTIONS.map(o => <option key={o.name} value={o.name}>{o.name}</option>)}
                 </select>
                 <input type="date" className="w-full p-2 bg-slate-100 rounded-lg font-medium" value={quickSelect.date} onChange={e => setQuickSelect({...quickSelect, date: e.target.value})} />
+                
+                {/* 按鈕區域：加入圖示 */}
                 <div className="grid grid-cols-2 gap-2 pt-2">
-                  <button onClick={() => handleQuickClock('startTime')} className="p-3 bg-blue-50 text-blue-600 rounded-xl font-bold hover:bg-blue-100">上班</button>
-                  <button onClick={() => handleQuickClock('endTime')} className="p-3 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100">下班</button>
-                  <button onClick={() => handleQuickClock('breakStart')} className="p-3 bg-amber-50 text-amber-600 rounded-xl font-bold hover:bg-amber-100">休息開始</button>
-                  <button onClick={() => handleQuickClock('breakEnd')} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100">休息結束</button>
+                  <button onClick={() => handleQuickClock('startTime')} className="flex items-center justify-center gap-2 p-3 bg-blue-50 text-blue-600 rounded-xl font-bold hover:bg-blue-100 transition-colors">
+                    <LogIn size={18} /> 上班
+                  </button>
+                  <button onClick={() => handleQuickClock('endTime')} className="flex items-center justify-center gap-2 p-3 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100 transition-colors">
+                    <LogOut size={18} /> 下班
+                  </button>
+                  <button onClick={() => handleQuickClock('breakStart')} className="flex items-center justify-center gap-2 p-3 bg-amber-50 text-amber-600 rounded-xl font-bold hover:bg-amber-100 transition-colors">
+                    <Coffee size={18} /> 休息開始
+                  </button>
+                  <button onClick={() => handleQuickClock('breakEnd')} className="flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors">
+                    <Play size={18} /> 休息結束
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* 修改這裡：每月統計 */}
             <div className="bg-slate-900 p-6 rounded-2xl text-white shadow-xl">
               <div className="flex justify-between items-center mb-4"><h2 className="font-bold flex items-center gap-2"><Users size={18} className="text-blue-400"/> 每月統計</h2><input type="month" className="bg-slate-800 text-white text-xs p-1 rounded border-none outline-none" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} /></div>
               <div className="space-y-3">
