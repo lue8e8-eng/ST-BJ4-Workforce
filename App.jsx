@@ -66,7 +66,7 @@ const App = () => {
   };
 
   const exportCSV = () => {
-    const headers = ["姓名", "日期", "上班", "下班", "休息始", "休息終", "工作時間"];
+    const headers = ["姓名", "日期", "上班", "下班", "休息開始", "休息結束", "工作時間"];
     const rows = records.map(r => [r.name, r.date, r.startTime, r.endTime, r.breakStart, r.breakEnd, secondsToTime(calculateDailyStats(r).workSec)]);
     const content = "\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n");
     const link = document.createElement("a");
@@ -133,8 +133,8 @@ const App = () => {
                 <div className="grid grid-cols-2 gap-2 pt-2">
                   <button onClick={() => handleQuickClock('startTime')} className="p-3 bg-blue-50 text-blue-600 rounded-xl font-bold hover:bg-blue-100">上班</button>
                   <button onClick={() => handleQuickClock('endTime')} className="p-3 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100">下班</button>
-                  <button onClick={() => handleQuickClock('breakStart')} className="p-3 bg-amber-50 text-amber-600 rounded-xl font-bold hover:bg-amber-100">休息始</button>
-                  <button onClick={() => handleQuickClock('breakEnd')} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100">休息終</button>
+                  <button onClick={() => handleQuickClock('breakStart')} className="p-3 bg-amber-50 text-amber-600 rounded-xl font-bold hover:bg-amber-100">休息開始</button>
+                  <button onClick={() => handleQuickClock('breakEnd')} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100">休息結束</button>
                 </div>
               </div>
             </div>
